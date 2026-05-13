@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronRight, Users, Swords, Shield, Zap, Trophy, Clock, Star, ArrowRight } from 'lucide-react'
+import { useMediaSection } from '@/hooks/useMedia'
 
 const GAMES = [
   { name: 'Valorant', players: '128,560', color: 'from-red-600/80 to-rose-900/80', letter: 'V', accent: '#ff4655' },
@@ -33,6 +34,16 @@ const FEATURES = [
 ]
 
 export default function LandingPage() {
+  const heroBackground = useMediaSection('hero_background')
+  const heroCharacter = useMediaSection('hero_character')
+  const gameCoverMap: Record<string, string | null> = {
+    Valorant: useMediaSection('game_valorant'),
+    'League of Legends': useMediaSection('game_lol'),
+    Fortnite: useMediaSection('game_fortnite'),
+    'Apex Legends': useMediaSection('game_apex'),
+    'Call of Duty': useMediaSection('game_cod'),
+  }
+
   return (
     <div className="min-h-screen bg-[#080808] text-white overflow-x-hidden">
       {/* Navbar */}
@@ -68,6 +79,12 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
         {/* Background glow */}
+        {heroBackground && (
+          <div className="absolute inset-0 z-0">
+            <img src={heroBackground} className="w-full h-full object-cover opacity-20" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#080808] via-[#080808]/80 to-transparent" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 via-transparent to-transparent" />
         <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-brand-500/10 to-transparent" />
 
@@ -117,8 +134,12 @@ export default function LandingPage() {
             <div className="absolute inset-0 bg-brand-500/10 rounded-full blur-3xl scale-75" />
             <div className="absolute inset-0 bg-brand-500/5 rounded-full blur-[100px]" />
 
-            {/* Big R letter as hero visual */}
-            <div className="relative w-96 h-96 flex items-center justify-center">
+            {/* Hero character image (if uploaded) */}
+            {heroCharacter && (
+              <img src={heroCharacter} alt="Hero" className="relative w-96 h-96 object-contain drop-shadow-2xl z-10" style={{ filter: 'drop-shadow(0 0 40px #ff2b2b60)' }} />
+            )}
+            {/* Big R letter as hero visual (fallback) */}
+            <div className={`relative w-96 h-96 flex items-center justify-center ${heroCharacter ? 'hidden' : ''}`}>
               {/* Outer ring */}
               <div className="absolute inset-0 rounded-full border border-brand-500/20 animate-pulse-slow" />
               <div className="absolute inset-4 rounded-full border border-brand-500/10" />
@@ -197,18 +218,21 @@ export default function LandingPage() {
                   className="group relative overflow-hidden rounded-xl cursor-pointer aspect-[3/4]"
                 >
                   {/* Game background */}
-                  <div className={`absolute inset-0 bg-gradient-to-b ${game.color}`} />
+                  {gameCoverMap[game.name] ? (
+                    <img src={gameCoverMap[game.name]!} alt={game.name} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-b ${game.color}`} />
+                  )}
                   <div className="absolute inset-0 bg-black/40" />
 
-                  {/* Game letter */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span
-                      className="text-8xl font-black opacity-20 group-hover:opacity-30 transition-opacity"
-                      style={{ color: game.accent }}
-                    >
-                      {game.letter}
-                    </span>
-                  </div>
+                  {/* Game letter (fallback) */}
+                  {!gameCoverMap[game.name] && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-8xl font-black opacity-20 group-hover:opacity-30 transition-opacity" style={{ color: game.accent }}>
+                        {game.letter}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

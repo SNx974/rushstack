@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Shield, Users, Swords, AlertTriangle, Ban, BarChart3 } from 'lucide-react'
+import { Shield, Users, Swords, AlertTriangle, Ban, BarChart3, Image } from 'lucide-react'
+import MediaManager from './MediaManager'
 import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -21,6 +22,7 @@ const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
+  { id: 'media', label: 'Médias', icon: Image },
 ]
 
 export default function AdminPage() {
@@ -134,6 +136,8 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {section === 'media' && <MediaManager />}
 
       {section === 'disputes' && (
         <div className="space-y-2">
