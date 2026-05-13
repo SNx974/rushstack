@@ -31,6 +31,7 @@ const RECENT_PLAYERS = [
 type QueueState = 'idle' | 'searching'
 
 export default function HomePage() {
+  console.log('NEW HOMEPAGE v2 LOADED')
   const profile = useAuthStore(s => s.user)
   const [selectedGame, setSelectedGame] = useState(GAMES[0])
   const [queueState, setQueueState] = useState<QueueState>('idle')
