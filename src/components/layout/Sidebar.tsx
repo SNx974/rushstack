@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { Avatar } from '@/components/ui/Avatar'
 
 const navItems = [
-  { to: '/', icon: Home, label: 'Dashboard', exact: true },
+  { to: '/dashboard', icon: Home, label: 'Dashboard', exact: true },
   { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { to: '/play', icon: Swords, label: 'Play Now' },
   { to: '/social', icon: Users, label: 'Social' },

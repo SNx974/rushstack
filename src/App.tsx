@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
+import LandingPage from '@/pages/LandingPage'
 import HomePage from '@/pages/HomePage'
 import LeaderboardPage from '@/pages/LeaderboardPage'
 import PlayPage from '@/pages/PlayPage'
@@ -33,7 +34,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
   if (isLoading) return <PageLoader />
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -44,13 +45,18 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Public landing */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* Auth routes */}
       <Route element={<GuestRoute><AuthLayout /></GuestRoute>}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
+      {/* App routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route index element={<HomePage />} />
+        <Route path="/dashboard" element={<HomePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/play" element={<PlayPage />} />
         <Route path="/profile" element={<ProfilePage />} />
