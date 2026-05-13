@@ -23,8 +23,8 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    const allowed = /\.(jpg|jpeg|png|gif|webp|svg)$/i
-    if (!allowed.test(file.originalname)) return cb(new Error('Images only'))
+    const allowed = /\.(jpg|jpeg|png|gif|webp|svg|ico)$/i
+    if (!allowed.test(file.originalname)) return cb(new Error('Images et .ico uniquement'))
     cb(null, true)
   },
 })

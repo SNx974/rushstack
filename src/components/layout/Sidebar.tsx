@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Home, Trophy, Swords, Users, Bell, Shield, LogOut, Settings, Zap } from 'lucide-react'
+import { Home, Trophy, Swords, Users, Shield, LogOut, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { Avatar } from '@/components/ui/Avatar'
+import { useSiteIcons } from '@/hooks/useSiteIcons'
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'Dashboard', exact: true },
@@ -20,6 +20,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const profile = useAuthStore(s => s.user)
   const signOut = useAuthStore(s => s.signOut)
   const navigate = useNavigate()
+  const { sidebarIcon } = useSiteIcons()
 
   const handleSignOut = async () => {
     await signOut()
@@ -30,8 +31,10 @@ export function Sidebar({ onClose }: SidebarProps) {
     <aside className="h-full flex flex-col bg-surface-300 border-r border-white/[0.06]">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.06]">
-        <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center glow-red">
-          <Zap className="w-4 h-4 text-white" fill="currentColor" />
+        <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center glow-red overflow-hidden">
+          {sidebarIcon
+            ? <img src={sidebarIcon} className="w-full h-full object-contain" alt="logo" />
+            : <Zap className="w-4 h-4 text-white" fill="currentColor" />}
         </div>
         <div>
           <span className="font-black text-sm tracking-widest text-white">RUSH</span>

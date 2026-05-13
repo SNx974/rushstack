@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronRight, Users, Swords, Shield, Zap, Trophy, Clock, Star, ArrowRight } from 'lucide-react'
 import { useMediaSection } from '@/hooks/useMedia'
+import { useSiteIcons } from '@/hooks/useSiteIcons'
 
 const GAMES = [
   { name: 'Valorant', players: '128,560', color: 'from-red-600/80 to-rose-900/80', letter: 'V', accent: '#ff4655' },
@@ -34,6 +35,7 @@ const FEATURES = [
 ]
 
 export default function LandingPage() {
+  const { navbarIcon } = useSiteIcons()
   const heroBackground = useMediaSection('hero_background')
   const heroCharacter = useMediaSection('hero_character')
   const gameCoverMap: Record<string, string | null> = {
@@ -49,8 +51,10 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 lg:px-12 h-16 bg-[#080808]/90 backdrop-blur-md border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand-500 rounded flex items-center justify-center">
-            <span className="font-black text-sm text-white">R</span>
+          <div className="w-8 h-8 bg-brand-500 rounded flex items-center justify-center overflow-hidden">
+            {navbarIcon
+              ? <img src={navbarIcon} className="w-full h-full object-contain" alt="logo" />
+              : <span className="font-black text-sm text-white">R</span>}
           </div>
           <span className="font-black text-lg tracking-widest">
             <span className="text-white">RUSH</span>

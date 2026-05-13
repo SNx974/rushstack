@@ -7,19 +7,26 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import type { MediaItem } from '@/hooks/useMedia'
 
-const SECTIONS = [
-  { value: 'hero_background', label: '🖼 Hero — Arrière-plan' },
-  { value: 'hero_character', label: '🧑‍🚀 Hero — Personnage' },
-  { value: 'hero_logo', label: '🔴 Hero — Logo' },
-  { value: 'game_valorant', label: '🎮 Jeu — Valorant' },
-  { value: 'game_cs2', label: '🎮 Jeu — CS2' },
-  { value: 'game_fortnite', label: '🎮 Jeu — Fortnite' },
-  { value: 'game_apex', label: '🎮 Jeu — Apex Legends' },
-  { value: 'game_cod', label: '🎮 Jeu — Call of Duty' },
-  { value: 'game_lol', label: '🎮 Jeu — League of Legends' },
-  { value: 'banner_cta', label: '📢 Bannière CTA' },
-  { value: 'sidebar_bg', label: '📐 Sidebar — Fond' },
-  { value: 'custom', label: '✨ Section personnalisée' },
+export const SECTIONS = [
+  // Icônes du site
+  { value: 'icon_favicon', label: '🌐 Icône — Favicon (onglet navigateur)', accept: '.ico,.png,.svg' },
+  { value: 'icon_navbar', label: '🔴 Icône — Navbar (logo barre du haut)', accept: '.ico,.png,.svg,.gif' },
+  { value: 'icon_sidebar', label: '📐 Icône — Sidebar (menu desktop)', accept: '.ico,.png,.svg,.gif' },
+  { value: 'icon_login', label: '🔐 Icône — Page connexion', accept: '.ico,.png,.svg,.gif' },
+  // Hero
+  { value: 'hero_background', label: '🖼 Hero — Arrière-plan', accept: 'image/*' },
+  { value: 'hero_character', label: '🧑‍🚀 Hero — Personnage / GIF', accept: 'image/*,.gif' },
+  // Jeux
+  { value: 'game_valorant', label: '🎮 Jeu — Valorant', accept: 'image/*' },
+  { value: 'game_cs2', label: '🎮 Jeu — CS2', accept: 'image/*' },
+  { value: 'game_fortnite', label: '🎮 Jeu — Fortnite', accept: 'image/*' },
+  { value: 'game_apex', label: '🎮 Jeu — Apex Legends', accept: 'image/*' },
+  { value: 'game_cod', label: '🎮 Jeu — Call of Duty', accept: 'image/*' },
+  { value: 'game_lol', label: '🎮 Jeu — League of Legends', accept: 'image/*' },
+  // Layout
+  { value: 'banner_cta', label: '📢 Bannière CTA', accept: 'image/*' },
+  { value: 'sidebar_bg', label: '📐 Sidebar — Fond', accept: 'image/*' },
+  { value: 'custom', label: '✨ Section personnalisée', accept: 'image/*,.ico' },
 ]
 
 function getToken() { return localStorage.getItem('token') }

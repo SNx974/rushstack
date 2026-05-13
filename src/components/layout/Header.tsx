@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Bell, Menu, Search, X, Zap } from 'lucide-react'
+import { Menu, X, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuthStore } from '@/stores/auth.store'
+import { useSiteIcons } from '@/hooks/useSiteIcons'
 import { Sidebar } from './Sidebar'
 
 export function Header() {
   const profile = useAuthStore(s => s.user)
+  const { navbarIcon } = useSiteIcons()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -19,8 +21,10 @@ export function Header() {
           <Menu className="w-5 h-5" />
         </button>
         <Link to="/" className="flex items-center gap-1.5 flex-1">
-          <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center">
-            <Zap className="w-3 h-3 text-white" fill="currentColor" />
+          <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center overflow-hidden">
+            {navbarIcon
+              ? <img src={navbarIcon} className="w-full h-full object-contain" alt="logo" />
+              : <Zap className="w-3 h-3 text-white" fill="currentColor" />}
           </div>
           <span className="font-black text-sm tracking-widest">
             <span className="text-white">RUSH</span>
