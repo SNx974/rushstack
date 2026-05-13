@@ -10,7 +10,7 @@ RUN npm ci --legacy-peer-deps
 
 COPY . .
 
-RUN npx expo export --platform web
+RUN EXPO_PLATFORM=web npx expo export --platform web
 
 # ── Production stage ──────────────────────────────────────────
 FROM nginx:alpine
