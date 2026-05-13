@@ -5,12 +5,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
-# Install web dependencies manquantes
-RUN npx expo install react-dom react-native-web @expo/metro-runtime --legacy-peer-deps
-
 COPY . .
 
-# Build the web export
 RUN npx expo export --platform web
 
 # ── Production stage ──────────────────────────────────────────
