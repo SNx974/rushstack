@@ -55,7 +55,7 @@ export default function HomePage() {
   const dashOffset = circumference * (1 - progress)
 
   return (
-    <div className="flex gap-0 -m-4 lg:-m-6 overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
+    <div className="flex h-full overflow-hidden">
 
       {/* ── LEFT: Games list ── */}
       <div className="w-64 flex-shrink-0 bg-surface-400 border-r border-white/[0.06] flex flex-col overflow-y-auto">

@@ -1,9 +1,12 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 
 export default function AppLayout() {
+  const { pathname } = useLocation()
+  const isFullscreen = pathname === '/dashboard'
+
   return (
     <div className="flex h-screen bg-surface-400 overflow-hidden">
       {/* Desktop sidebar */}
@@ -18,11 +21,17 @@ export default function AppLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-hidden pb-20 lg:pb-0">
-          <div className="h-full overflow-y-auto">
-            <div className="max-w-6xl mx-auto p-4 lg:p-6 min-h-full">
+          {isFullscreen ? (
+            <div className="h-full overflow-hidden">
               <Outlet />
             </div>
-          </div>
+          ) : (
+            <div className="h-full overflow-y-auto">
+              <div className="max-w-6xl mx-auto p-4 lg:p-6 min-h-full">
+                <Outlet />
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
