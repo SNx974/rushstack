@@ -1,11 +1,9 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+# Copy everything first so any file change busts the cache
 COPY . .
-ARG CACHEBUST=1
-RUN echo "bust=$CACHEBUST" && npm run build
+RUN npm ci && npm run build
 
 # ── Production stage ──────────────────────────────────────────
 FROM node:20-alpine
