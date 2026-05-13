@@ -85,7 +85,7 @@ const SmallGameLogo = ({ game }: { game: string }) => {
 
 /* ── Game tile backgrounds ── */
 const GameTile = ({ game }: { game: string }) => {
-  const tiles: Record<string, JSX.Element> = {
+  const tiles: Record<string, React.ReactElement> = {
     valorant: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><defs><linearGradient id="v1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1a0608" /><stop offset="1" stopColor="#3a0a10" /></linearGradient></defs><rect width="200" height="200" fill="url(#v1)" /><path d="M30 50 L70 50 L100 130 L130 50 L170 50 L110 170 L90 170 Z" fill="#ef2434" /></svg>,
     cod: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><rect width="200" height="200" fill="#3a2418" /><rect width="200" height="200" fill="#1a0e08" opacity="0.6" /><text x="100" y="115" textAnchor="middle" fill="#e8c89a" fontFamily="Rajdhani" fontWeight="700" fontSize="34" letterSpacing="2">CALL∙DUTY</text></svg>,
     lol: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><defs><radialGradient id="l1" cx="0.5" cy="0.5" r="0.7"><stop offset="0" stopColor="#1a2a4a" /><stop offset="1" stopColor="#08101e" /></radialGradient></defs><rect width="200" height="200" fill="url(#l1)" /><circle cx="100" cy="100" r="55" fill="none" stroke="#d4b86a" strokeWidth="6" /><text x="100" y="118" textAnchor="middle" fill="#d4b86a" fontFamily="serif" fontWeight="700" fontSize="58" fontStyle="italic">L</text></svg>,
