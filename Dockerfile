@@ -4,7 +4,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+ARG CACHEBUST=1
+RUN echo "bust=$CACHEBUST" && npm run build
 
 # ── Production stage ──────────────────────────────────────────
 FROM node:20-alpine
