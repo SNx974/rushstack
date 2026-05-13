@@ -19,6 +19,20 @@ const CSS_VARS = `
   }
   .rs-display { font-family: 'Rajdhani', sans-serif; }
   .rs-mono { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  @keyframes rs-fadein {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes rs-glow-pulse {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(239,36,52,0.5)); }
+    50%       { filter: drop-shadow(0 0 20px rgba(239,36,52,0.9)); }
+  }
+  .rs-queue-enter {
+    animation: rs-fadein 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .rs-glow-ring {
+    animation: rs-glow-pulse 2s ease-in-out infinite;
+  }
 `
 
 /* ── SVG Logo ── */
@@ -413,7 +427,7 @@ function LobbyView() {
 
               {/* Timer */}
               <div style={{ ...S.panel2, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ position: 'relative', width: 240, height: 240, display: 'grid', placeItems: 'center' }}>
+                <div className={queueActive ? 'rs-queue-enter' : ''} style={{ position: 'relative', width: 240, height: 240, display: 'grid', placeItems: 'center' }}>
                   <svg width="240" height="240" style={{ position: 'absolute', inset: 0 }}>
                     <defs>
                       <filter id="redglow"><feGaussianBlur stdDeviation="4" /></filter>
@@ -425,14 +439,14 @@ function LobbyView() {
                     <circle cx="120" cy="120" r="110" fill="none" stroke="#220a10" strokeWidth="1" />
                     <circle cx="120" cy="120" r={radius} fill="none" stroke="#220a10" strokeWidth="6" />
                     <circle cx="120" cy="120" r="118" fill="none" stroke="#3a0a14" strokeWidth="1" strokeDasharray="2 6" />
-                    {queueActive && <>
+                    {queueActive && <g className="rs-queue-enter rs-glow-ring">
                       <circle cx="120" cy="120" r={radius} fill="none" stroke="url(#ringG)" strokeWidth="10"
                         strokeDasharray={`${circ * progress} ${circ}`} strokeLinecap="round"
                         transform="rotate(-90 120 120)" filter="url(#redglow)" opacity="0.7" />
                       <circle cx="120" cy="120" r={radius} fill="none" stroke="url(#ringG)" strokeWidth="4"
                         strokeDasharray={`${circ * progress} ${circ}`} strokeLinecap="round"
                         transform="rotate(-90 120 120)" />
-                    </>}
+                    </g>}
                     {[...Array(60)].map((_, i) => {
                       const a = (i / 60) * Math.PI * 2 - Math.PI / 2
                       const x1 = 120 + Math.cos(a) * 122; const y1 = 120 + Math.sin(a) * 122
@@ -440,14 +454,14 @@ function LobbyView() {
                       return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#3a0a14" strokeWidth={i % 5 === 0 ? 1.5 : 0.5} />
                     })}
                   </svg>
-                  <div style={{ textAlign: 'center', zIndex: 1 }}>
+                  <div key={queueActive ? 'active' : 'idle'} className="rs-queue-enter" style={{ textAlign: 'center', zIndex: 1 }}>
                     <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 8 }}>
                       {queueActive ? 'Recherche de partie' : 'Prêt à jouer'}
                     </p>
                     <p className="rs-display" style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, letterSpacing: '0.02em', color: '#fff' }}>
                       {fmt(queueSeconds)}
                     </p>
-                    <p className="rs-mono" style={{ color: 'var(--muted-2)', marginTop: 10 }}>Temps estimé : 00:45</p>
+                    {queueActive && <p className="rs-queue-enter rs-mono" style={{ color: 'var(--muted-2)', marginTop: 10 }}>Temps estimé : 00:45</p>}
                   </div>
                 </div>
                 {queueActive
