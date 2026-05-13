@@ -1,85 +1,38 @@
-import { TouchableOpacity, Text, ActivityIndicator, View } from 'react-native';
-import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils'
+import { forwardRef } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
-type Size = 'sm' | 'md' | 'lg';
-
-interface ButtonProps {
-  onPress: () => void;
-  children: ReactNode;
-  variant?: Variant;
-  size?: Size;
-  disabled?: boolean;
-  loading?: boolean;
-  icon?: ReactNode;
-  fullWidth?: boolean;
-  className?: string;
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'ghost' | 'outline' | 'danger'
+  size?: 'sm' | 'md' | 'lg'
+  loading?: boolean
 }
 
-const variantStyles: Record<Variant, string> = {
-  primary:   'bg-brand-700 active:bg-brand-800',
-  secondary: 'bg-surface-100 active:bg-surface-200',
-  ghost:     'bg-transparent active:bg-surface-100',
-  danger:    'bg-red-700 active:bg-red-800',
-  outline:   'bg-transparent border border-brand-700 active:bg-brand-950/30',
-};
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        disabled={disabled || loading}
+        className={cn(
+          'inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed',
+          {
+            'bg-brand-500 hover:bg-brand-600 text-white': variant === 'primary',
+            'hover:bg-white/10 text-white/70 hover:text-white': variant === 'ghost',
+            'border border-white/20 hover:border-white/40 text-white hover:bg-white/5': variant === 'outline',
+            'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30': variant === 'danger',
+            'text-xs px-3 py-1.5': size === 'sm',
+            'text-sm px-4 py-2': size === 'md',
+            'text-base px-6 py-3': size === 'lg',
+          },
+          className,
+        )}
+        {...props}
+      >
+        {loading && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+        {children}
+      </button>
+    )
+  },
+)
 
-const textStyles: Record<Variant, string> = {
-  primary:   'text-white',
-  secondary: 'text-gray-200',
-  ghost:     'text-gray-300',
-  danger:    'text-white',
-  outline:   'text-brand-600',
-};
-
-const sizeStyles: Record<Size, string> = {
-  sm: 'px-3 py-2',
-  md: 'px-5 py-3',
-  lg: 'px-7 py-4',
-};
-
-const textSizeStyles: Record<Size, string> = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-base',
-};
-
-export function Button({
-  onPress,
-  children,
-  variant = 'primary',
-  size = 'md',
-  disabled = false,
-  loading = false,
-  icon,
-  fullWidth = false,
-  className = '',
-}: ButtonProps) {
-  const isDisabled = disabled || loading;
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={isDisabled}
-      className={`
-        flex-row items-center justify-center rounded-xl gap-2
-        ${variantStyles[variant]}
-        ${sizeStyles[size]}
-        ${fullWidth ? 'w-full' : 'self-start'}
-        ${isDisabled ? 'opacity-50' : ''}
-        ${className}
-      `}
-    >
-      {loading ? (
-        <ActivityIndicator size="small" color={variant === 'ghost' ? '#9ca3af' : '#ffffff'} />
-      ) : (
-        <>
-          {icon && <View>{icon}</View>}
-          <Text className={`font-semibold ${textStyles[variant]} ${textSizeStyles[size]}`}>
-            {children}
-          </Text>
-        </>
-      )}
-    </TouchableOpacity>
-  );
-}
+Button.displayName = 'Button'

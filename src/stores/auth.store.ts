@@ -1,23 +1,21 @@
-import { create } from 'zustand';
-import { supabase } from '@/lib/supabase';
-import { fetchProfile } from '@/services/profile.service';
-import type { AuthUser, Profile } from '@/types';
-import type { Session } from '@supabase/supabase-js';
+import { create } from 'zustand'
+import type { Session, User } from '@supabase/supabase-js'
+import type { Profile } from '@/types/database.types'
+import { supabase } from '@/lib/supabase/client'
 
-interface AuthStore {
-  user: AuthUser | null;
-  profile: Profile | null;
-  session: Session | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-
-  setSession: (session: Session | null) => Promise<void>;
-  setProfile: (profile: Profile | null) => void;
-  refreshProfile: () => Promise<void>;
-  signOut: () => Promise<void>;
+interface AuthState {
+  user: User | null
+  profile: Profile | null
+  session: Session | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  setSession: (session: Session | null) => void
+  setLoading: (loading: boolean) => void
+  refreshProfile: () => Promise<void>
+  signOut: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
   session: null,
@@ -25,42 +23,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isAuthenticated: false,
 
   setSession: async (session) => {
-    if (!session) {
-      set({ user: null, profile: null, session: null, isAuthenticated: false, isLoading: false });
-      return;
-    }
-
-    const user: AuthUser = {
-      id: session.user.id,
-      email: session.user.email ?? null,
-      phone: session.user.phone ?? null,
-    };
-
-    set({ user, session, isAuthenticated: true, isLoading: true });
-
-    try {
-      const profile = await fetchProfile(session.user.id);
-      set({ profile, isLoading: false });
-    } catch {
-      set({ isLoading: false });
+    set({ session, user: session?.user ?? null, isAuthenticated: !!session })
+    if (session?.user) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+      set({ profile: data, isLoading: false })
+    } else {
+      set({ profile: null, isLoading: false })
     }
   },
 
-  setProfile: (profile) => set({ profile }),
+  setLoading: (isLoading) => set({ isLoading }),
 
   refreshProfile: async () => {
-    const { user } = get();
-    if (!user) return;
-    try {
-      const profile = await fetchProfile(user.id);
-      set({ profile });
-    } catch {
-      // silently fail
-    }
+    const { user } = get()
+    if (!user) return
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    set({ profile: data })
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
-    set({ user: null, profile: null, session: null, isAuthenticated: false });
+    await supabase.auth.signOut()
+    set({ user: null, profile: null, session: null, isAuthenticated: false })
   },
-}));
+}))
