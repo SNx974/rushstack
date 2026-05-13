@@ -1,52 +1,63 @@
 import { create } from 'zustand'
-import type { Session, User } from '@supabase/supabase-js'
-import type { Profile } from '@/types/database.types'
-import { supabase } from '@/lib/supabase/client'
+import { api } from '@/lib/api'
+
+export interface User {
+  id: string
+  email: string
+  username: string
+  display_name: string | null
+  avatar_url: string | null
+  bio: string | null
+  role: 'player' | 'moderator' | 'admin'
+  is_banned: boolean
+}
 
 interface AuthState {
   user: User | null
-  profile: Profile | null
-  session: Session | null
+  token: string | null
   isLoading: boolean
   isAuthenticated: boolean
-  setSession: (session: Session | null) => void
-  setLoading: (loading: boolean) => void
-  refreshProfile: () => Promise<void>
-  signOut: () => Promise<void>
+  init: () => Promise<void>
+  login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, username: string) => Promise<void>
+  signOut: () => void
+  setLoading: (v: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  profile: null,
-  session: null,
+  token: localStorage.getItem('token'),
   isLoading: true,
   isAuthenticated: false,
 
-  setSession: async (session) => {
-    set({ session, user: session?.user ?? null, isAuthenticated: !!session })
-    if (session?.user) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-      set({ profile: data, isLoading: false })
-    } else {
-      set({ profile: null, isLoading: false })
+  init: async () => {
+    const token = localStorage.getItem('token')
+    if (!token) { set({ isLoading: false }); return }
+    try {
+      const user = await api.get<User>('/auth/me')
+      set({ user, token, isAuthenticated: true, isLoading: false })
+    } catch {
+      localStorage.removeItem('token')
+      set({ user: null, token: null, isAuthenticated: false, isLoading: false })
     }
   },
 
+  login: async (email, password) => {
+    const { token, user } = await api.post<{ token: string; user: User }>('/auth/login', { email, password })
+    localStorage.setItem('token', token)
+    set({ token, user, isAuthenticated: true })
+  },
+
+  register: async (email, password, username) => {
+    const { token, user } = await api.post<{ token: string; user: User }>('/auth/register', { email, password, username })
+    localStorage.setItem('token', token)
+    set({ token, user, isAuthenticated: true })
+  },
+
+  signOut: () => {
+    localStorage.removeItem('token')
+    set({ token: null, user: null, isAuthenticated: false })
+  },
+
   setLoading: (isLoading) => set({ isLoading }),
-
-  refreshProfile: async () => {
-    const { user } = get()
-    if (!user) return
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    set({ profile: data })
-  },
-
-  signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null, profile: null, session: null, isAuthenticated: false })
-  },
 }))

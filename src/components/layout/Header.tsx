@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { Sidebar } from './Sidebar'
 
 export function Header() {
-  const profile = useAuthStore(s => s.profile)
+  const profile = useAuthStore(s => s.user)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (

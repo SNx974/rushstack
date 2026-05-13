@@ -24,7 +24,7 @@ const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } 
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }
 
 export default function HomePage() {
-  const profile = useAuthStore(s => s.profile)
+  const profile = useAuthStore(s => s.user)
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">

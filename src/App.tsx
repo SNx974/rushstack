@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
-import { supabase } from '@/lib/supabase/client'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
 import HomePage from '@/pages/HomePage'
@@ -12,22 +11,6 @@ import SocialPage from '@/pages/SocialPage'
 import AdminPage from '@/pages/admin/AdminPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  const isLoading = useAuthStore(s => s.isLoading)
-  if (isLoading) return <PageLoader />
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  return <>{children}</>
-}
-
-function GuestRoute({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  const isLoading = useAuthStore(s => s.isLoading)
-  if (isLoading) return <PageLoader />
-  if (isAuthenticated) return <Navigate to="/" replace />
-  return <>{children}</>
-}
 
 function PageLoader() {
   return (
@@ -40,29 +23,32 @@ function PageLoader() {
   )
 }
 
-export default function App() {
-  const setSession = useAuthStore(s => s.setSession)
-  const setLoading = useAuthStore(s => s.setLoading)
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuthStore()
+  if (isLoading) return <PageLoader />
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-    return () => subscription.unsubscribe()
-  }, [setSession])
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuthStore()
+  if (isLoading) return <PageLoader />
+  if (isAuthenticated) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
+export default function App() {
+  const init = useAuthStore(s => s.init)
+
+  useEffect(() => { init() }, [init])
 
   return (
     <Routes>
-      {/* Auth routes */}
       <Route element={<GuestRoute><AuthLayout /></GuestRoute>}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* App routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<HomePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />

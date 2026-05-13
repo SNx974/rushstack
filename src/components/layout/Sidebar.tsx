@@ -17,7 +17,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onClose }: SidebarProps) {
-  const profile = useAuthStore(s => s.profile)
+  const profile = useAuthStore(s => s.user)
   const signOut = useAuthStore(s => s.signOut)
   const navigate = useNavigate()
 

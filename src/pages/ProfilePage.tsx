@@ -17,7 +17,7 @@ const MOCK_MATCH_HISTORY = Array.from({ length: 10 }, (_, i) => ({
 }))
 
 export default function ProfilePage() {
-  const profile = useAuthStore(s => s.profile)
+  const profile = useAuthStore(s => s.user)
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
