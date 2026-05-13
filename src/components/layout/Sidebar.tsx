@@ -6,7 +6,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { useSiteIcons } from '@/hooks/useSiteIcons'
 
 const navItems = [
-  { to: '/dashboard', icon: Home, label: 'Dashboard', exact: true },
+  { to: '/', icon: Home, label: 'Accueil', exact: true },
   { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { to: '/play', icon: Swords, label: 'Play Now' },
   { to: '/social', icon: Users, label: 'Social' },

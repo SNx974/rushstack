@@ -34,8 +34,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
   if (isLoading) return <PageLoader />
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  if (isAuthenticated) return <Navigate to="/" replace />
   return <>{children}</>
+}
+
+// Smart homepage: dashboard si connecté, landing sinon
+function SmartHome() {
+  const { isAuthenticated, isLoading } = useAuthStore()
+  if (isLoading) return <PageLoader />
+  if (isAuthenticated) {
+    return (
+      <AppLayout>
+        <HomePage />
+      </AppLayout>
+    )
+  }
+  return <LandingPage />
 }
 
 export default function App() {
@@ -45,8 +59,8 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Public landing */}
-      <Route path="/" element={<LandingPage />} />
+      {/* Smart homepage */}
+      <Route path="/" element={<SmartHome />} />
 
       {/* Auth routes */}
       <Route element={<GuestRoute><AuthLayout /></GuestRoute>}>
@@ -56,7 +70,7 @@ export default function App() {
 
       {/* App routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/dashboard" element={<HomePage />} />
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/play" element={<PlayPage />} />
         <Route path="/profile" element={<ProfilePage />} />

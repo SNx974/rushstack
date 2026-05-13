@@ -3,9 +3,13 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 
-export default function AppLayout() {
+interface AppLayoutProps {
+  children?: React.ReactNode
+}
+
+export default function AppLayout({ children }: AppLayoutProps) {
   const { pathname } = useLocation()
-  const isFullscreen = pathname === '/dashboard'
+  const isFullscreen = pathname === '/' || pathname === '/dashboard'
 
   return (
     <div className="flex h-screen bg-surface-400 overflow-hidden">
@@ -23,12 +27,12 @@ export default function AppLayout() {
         <main className="flex-1 overflow-hidden pb-20 lg:pb-0">
           {isFullscreen ? (
             <div className="h-full overflow-hidden">
-              <Outlet />
+              {children ?? <Outlet />}
             </div>
           ) : (
             <div className="h-full overflow-y-auto">
               <div className="max-w-6xl mx-auto p-4 lg:p-6 min-h-full">
-                <Outlet />
+                {children ?? <Outlet />}
               </div>
             </div>
           )}
