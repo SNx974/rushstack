@@ -1,508 +1,735 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Trophy, MapPin, Wifi, Info, Plus, Users, Swords, Zap, Clock, Star, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
-import { Avatar } from '@/components/ui/Avatar'
 import { useSiteIcons } from '@/hooks/useSiteIcons'
 import { useMediaSection } from '@/hooks/useMedia'
+import { ChevronRight } from 'lucide-react'
 
-const GAMES = [
-  { id: 'valorant', name: 'VALORANT', mmr: 3250, icon: '🎯', color: '#FF4655', border: 'border-red-500/40', bg: 'from-red-500/20 to-red-900/10' },
-  { id: 'lol', name: 'LEAGUE OF LEGENDS', mmr: 2850, icon: '⚔️', color: '#C89B3C', border: 'border-amber-500/20', bg: 'from-amber-500/20 to-amber-900/10' },
-  { id: 'apex', name: 'APEX LEGENDS', mmr: 2950, icon: '🔴', color: '#CD4227', border: 'border-orange-500/20', bg: 'from-orange-500/20 to-orange-900/10' },
-  { id: 'cod', name: 'CALL OF DUTY', mmr: 2700, icon: '💀', color: '#888', border: 'border-gray-500/20', bg: 'from-gray-500/10 to-gray-900/10' },
-  { id: 'fortnite', name: 'FORTNITE', mmr: 2600, icon: '🔵', color: '#00C8FF', border: 'border-cyan-500/20', bg: 'from-cyan-500/20 to-cyan-900/10' },
-  { id: 'r6', name: 'RAINBOW SIX SIEGE', mmr: 2500, icon: '6️⃣', color: '#888', border: 'border-gray-500/20', bg: 'from-gray-500/10 to-gray-900/10' },
+/* ── CSS vars (injected once) ── */
+const CSS_VARS = `
+  :root {
+    --bg: #0a0a0c;
+    --panel: #111116;
+    --panel-2: #0e0e12;
+    --line: #1e1e24;
+    --muted: #8a8a93;
+    --muted-2: #5a5a62;
+    --red: #ef2434;
+    --red-dark: #c1121f;
+  }
+  .rs-display { font-family: 'Rajdhani', sans-serif; }
+  .rs-mono { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+`
+
+/* ── SVG Logo ── */
+const RushLogo = ({ size = 36 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+    <defs>
+      <linearGradient id="rl" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ff3a48" />
+        <stop offset="1" stopColor="#c1121f" />
+      </linearGradient>
+    </defs>
+    <path d="M8 4 L44 4 Q56 4 56 18 Q56 28 46 32 L58 60 L42 60 L32 36 L24 36 L24 60 L8 60 Z M24 14 L24 26 L40 26 Q44 26 44 20 Q44 14 40 14 Z" fill="url(#rl)" />
+  </svg>
+)
+
+/* ── Hero art SVG ── */
+const HeroArt = () => (
+  <svg viewBox="0 0 600 400" preserveAspectRatio="xMaxYMid slice" style={{ width: '100%', height: '100%', display: 'block' }}>
+    <defs>
+      <radialGradient id="hg" cx="0.65" cy="0.45" r="0.7">
+        <stop offset="0" stopColor="#3a0a10" stopOpacity="0.9" />
+        <stop offset="0.5" stopColor="#1a0608" stopOpacity="0.6" />
+        <stop offset="1" stopColor="#0a0a0c" stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id="hg2" x1="0" x2="1">
+        <stop offset="0" stopColor="#0a0a0c" />
+        <stop offset="0.4" stopColor="#0a0a0c" stopOpacity="0.85" />
+        <stop offset="1" stopColor="#0a0a0c" stopOpacity="0" />
+      </linearGradient>
+      <pattern id="pgrid" width="22" height="22" patternUnits="userSpaceOnUse">
+        <path d="M22 0 L0 0 0 22" fill="none" stroke="#2a0a10" strokeWidth="0.5" opacity="0.5" />
+      </pattern>
+    </defs>
+    <rect width="600" height="400" fill="#15080b" />
+    <rect width="600" height="400" fill="url(#pgrid)" />
+    <rect width="600" height="400" fill="url(#hg)" />
+    <g opacity="0.35" transform="translate(330 60)">
+      <path d="M0 0 L160 0 Q220 0 220 60 Q220 110 175 130 L235 280 L160 280 L115 160 L70 160 L70 280 L0 280 Z M70 50 L70 110 L150 110 Q170 110 170 80 Q170 50 150 50 Z" fill="#ef2434" opacity="0.4" />
+    </g>
+    <g transform="translate(360 60)">
+      <path d="M90 0 Q150 5 175 60 Q190 100 185 145 L220 200 Q235 240 230 290 L235 340 L40 340 L45 290 Q40 240 55 200 L90 145 Q85 100 100 60 Q115 5 90 0 Z" fill="#0a0608" />
+      <path d="M75 80 Q110 60 165 80 Q175 110 165 140 Q140 150 105 145 Q80 130 75 80 Z" fill="#180a0d" />
+      <circle cx="105" cy="105" r="6" fill="#ff3a48" />
+      <circle cx="105" cy="105" r="10" fill="#ff3a48" opacity="0.3" />
+      <circle cx="145" cy="105" r="6" fill="#ff3a48" />
+      <circle cx="145" cy="105" r="10" fill="#ff3a48" opacity="0.3" />
+      <g transform="translate(110 210) scale(0.5)" fill="#ef2434">
+        <path d="M0 0 L60 0 Q80 0 80 22 Q80 38 65 46 L85 95 L60 95 L45 56 L25 56 L25 95 L0 95 Z M25 18 L25 38 L55 38 Q62 38 62 28 Q62 18 55 18 Z" />
+      </g>
+    </g>
+    <rect width="600" height="400" fill="url(#hg2)" />
+  </svg>
+)
+
+/* ── Small game logos ── */
+const SmallGameLogo = ({ game }: { game: string }) => {
+  if (game === 'valorant') return <svg viewBox="0 0 32 32"><rect width="32" height="32" fill="#1a0608" /><path d="M4 8 L11 8 L16 22 L21 8 L28 8 L18 28 L14 28 Z" fill="#ef2434" /></svg>
+  if (game === 'cod') return <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#5a3a1a" /><text x="16" y="20" textAnchor="middle" fill="#e8c89a" fontFamily="Rajdhani" fontWeight="700" fontSize="8">CALL∙DUTY</text></svg>
+  if (game === 'lol') return <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#08101e" /><circle cx="16" cy="16" r="10" fill="none" stroke="#d4b86a" strokeWidth="1.5" /><text x="16" y="21" textAnchor="middle" fill="#d4b86a" fontFamily="serif" fontWeight="700" fontSize="14" fontStyle="italic">L</text></svg>
+  if (game === 'apex') return <svg viewBox="0 0 32 32"><rect width="32" height="32" fill="#2a0608" /><polygon points="16,6 24,26 16,22 8,26" fill="#ef2434" /></svg>
+  if (game === 'fortnite') return <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="3" fill="#2a1245" /><text x="16" y="22" textAnchor="middle" fill="#fff" fontFamily="Rajdhani" fontWeight="700" fontSize="18">F</text></svg>
+  return <svg viewBox="0 0 32 32"><rect width="32" height="32" fill="#1a1a22" /></svg>
+}
+
+/* ── Game tile backgrounds ── */
+const GameTile = ({ game }: { game: string }) => {
+  const tiles: Record<string, JSX.Element> = {
+    valorant: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><defs><linearGradient id="v1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1a0608" /><stop offset="1" stopColor="#3a0a10" /></linearGradient></defs><rect width="200" height="200" fill="url(#v1)" /><path d="M30 50 L70 50 L100 130 L130 50 L170 50 L110 170 L90 170 Z" fill="#ef2434" /></svg>,
+    cod: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><rect width="200" height="200" fill="#3a2418" /><rect width="200" height="200" fill="#1a0e08" opacity="0.6" /><text x="100" y="115" textAnchor="middle" fill="#e8c89a" fontFamily="Rajdhani" fontWeight="700" fontSize="34" letterSpacing="2">CALL∙DUTY</text></svg>,
+    lol: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><defs><radialGradient id="l1" cx="0.5" cy="0.5" r="0.7"><stop offset="0" stopColor="#1a2a4a" /><stop offset="1" stopColor="#08101e" /></radialGradient></defs><rect width="200" height="200" fill="url(#l1)" /><circle cx="100" cy="100" r="55" fill="none" stroke="#d4b86a" strokeWidth="6" /><text x="100" y="118" textAnchor="middle" fill="#d4b86a" fontFamily="serif" fontWeight="700" fontSize="58" fontStyle="italic">L</text></svg>,
+    apex: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2a0608" /><stop offset="1" stopColor="#1a0408" /></linearGradient></defs><rect width="200" height="200" fill="url(#a1)" /><polygon points="100,40 140,140 100,115 60,140" fill="#ef2434" /></svg>,
+    fortnite: <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}><defs><linearGradient id="f1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a1a5a" /><stop offset="1" stopColor="#1a0a2a" /></linearGradient></defs><rect width="200" height="200" fill="url(#f1)" /><text x="100" y="125" textAnchor="middle" fill="#a06aff" fontFamily="Rajdhani" fontWeight="700" fontSize="80">F</text></svg>,
+  }
+  return tiles[game] ?? <svg viewBox="0 0 200 200"><rect width="200" height="200" fill="#1a1a22" /></svg>
+}
+
+/* ── Seed avatar ── */
+const SeedAvatar = ({ seed = 0, size = 36, ring }: { seed?: number; size?: number; ring?: string }) => {
+  const palettes = [
+    ['#1a0608', '#ef2434', '#ff8090'],
+    ['#0a1a2a', '#3a6abf', '#a0c0ff'],
+    ['#1a1a0a', '#8a8a3a', '#dfdf90'],
+    ['#1a0a1a', '#7c3aed', '#c0a0ff'],
+    ['#2a1a0a', '#bf6a3a', '#ffc090'],
+    ['#0a1a0a', '#3aaf6a', '#90ffc0'],
+  ]
+  const c = palettes[seed % palettes.length]
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: c[0], border: ring ? `2px solid ${ring}` : '2px solid #2a2a31', overflow: 'hidden', flexShrink: 0 }}>
+      <svg viewBox="0 0 40 40" width="100%" height="100%">
+        <rect width="40" height="40" fill={c[0]} />
+        <path d="M0 30 Q20 12 40 30 L40 40 L0 40 Z" fill={c[1]} opacity="0.7" />
+        <circle cx="20" cy="18" r="9" fill={c[0]} stroke={c[1]} strokeWidth="1" />
+        <circle cx="16.5" cy="18" r="1.4" fill={c[2]} />
+        <circle cx="23.5" cy="18" r="1.4" fill={c[2]} />
+      </svg>
+    </div>
+  )
+}
+
+/* ── Immortal badge ── */
+const ImmortalBadge = ({ size = 40 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40">
+    <defs>
+      <linearGradient id="ib" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ff5070" />
+        <stop offset="1" stopColor="#a01838" />
+      </linearGradient>
+    </defs>
+    <path d="M20 3 L33 12 L30 32 L20 38 L10 32 L7 12 Z" fill="url(#ib)" stroke="#ff8090" strokeWidth="0.8" />
+    <path d="M14 16 L20 12 L26 16 L20 28 Z" fill="#ff5070" opacity="0.8" />
+    <path d="M20 12 L23 18 L20 28 L17 18 Z" fill="#fff" opacity="0.6" />
+  </svg>
+)
+
+const TRACKED_GAMES = [
+  { id: 'valorant', name: 'VALORANT', mmr: '3,250 MMR' },
+  { id: 'cod', name: 'CALL OF DUTY', mmr: '2,850 MMR' },
+  { id: 'lol', name: 'LEAGUE OF LEGENDS', mmr: '2,650 MMR' },
+  { id: 'apex', name: 'APEX LEGENDS', mmr: '2,400 MMR' },
+  { id: 'fortnite', name: 'FORTNITE', mmr: '2,100 MMR' },
 ]
 
-const STATS = [
-  { value: '128K+', label: 'JOUEURS ACTIFS' },
-  { value: '2.4M+', label: 'MATCHS JOUÉS' },
-  { value: '58', label: 'JEUX SUPPORTÉS' },
-  { value: '24/7', label: 'SUPPORT ACTIF' },
+const POPULAR_GAMES = [
+  { id: 'valorant', name: 'VALORANT', players: '24,532 joueurs' },
+  { id: 'cod', name: 'CALL OF DUTY', players: '18,102 joueurs' },
+  { id: 'lol', name: 'LEAGUE OF LEGENDS', players: '16,910 joueurs' },
+  { id: 'apex', name: 'APEX LEGENDS', players: '13,502 joueurs' },
+  { id: 'fortnite', name: 'FORTNITE', players: '9,874 joueurs' },
 ]
 
-const LEADERBOARD = [
-  { rank: 1, name: 'Zerox', mmr: 3480, online: true },
-  { rank: 2, name: 'NeyZ', mmr: 3420, online: false },
-  { rank: 3, name: 'Skyline', mmr: 3310, online: true },
-  { rank: 4, name: 'W4rrior', mmr: 3220, online: true },
-  { rank: 5, name: 'Kirua', mmr: 3150, online: false },
+const RANKING = [
+  { rank: 1, name: 'NeyZ', mmr: '4,350 MMR', seed: 1 },
+  { rank: 2, name: 'Skyline', mmr: '4,120 MMR', seed: 2 },
+  { rank: 3, name: 'W4rrior', mmr: '3,980 MMR', seed: 4 },
+  { rank: 4, name: 'Zerox', mmr: '3,250 MMR', seed: 0, me: true },
+  { rank: 5, name: 'Kirua', mmr: '3,150 MMR', seed: 5 },
 ]
 
-const RECENT_PLAYERS = [
-  { name: 'NeyZ', mmr: 3210, online: true },
-  { name: 'Skyline', mmr: 3180, online: true },
-  { name: 'W4rrior', mmr: 3050, online: true },
+const ACTIVITY = [
+  { name: 'NeyZ', action: 'a atteint le rang Radiant', time: 'il y a 10 min', seed: 1 },
+  { name: 'Skyline', action: 'a remporté un match', time: 'il y a 25 min', seed: 2 },
+  { name: 'W4rrior', action: 'a rejoint Rush Stack', time: 'il y a 1 h', seed: 4 },
 ]
 
-const QUEUE_STEPS = ['RECHERCHE', 'JOUEURS TROUVÉS', 'CONFIRMATION', 'CHARGEMENT', 'EN MATCH']
+const STEPS = ['RECHERCHE', 'JOUEURS TROUVÉS', 'CONFIRMATION', 'CHARGEMENT', 'EN MATCH']
+const TOP_NAV = ['ACCUEIL', 'JEUX', 'CLASSEMENTS', 'LIGUES', 'TOURNOIS', 'BOUTIQUE']
 
-type QueueState = 'idle' | 'searching'
+const S: Record<string, React.CSSProperties> = {
+  panel: { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 },
+  panel2: { background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 10 },
+}
 
-// ─── LOBBY (logged-in view) ───────────────────────────────────────────────────
+/* ── LOBBY (connecté) ──────────────────────────────────────────── */
 function LobbyView() {
   const profile = useAuthStore(s => s.user)
   const signOut = useAuthStore(s => s.signOut)
   const navigate = useNavigate()
   const { navbarIcon } = useSiteIcons()
-  const [selectedGame, setSelectedGame] = useState(GAMES[0])
-  const [queueState, setQueueState] = useState<QueueState>('idle')
-  const [searchTime, setSearchTime] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const heroCharacter = useMediaSection('hero_character')
+
+  const [activeNav, setActiveNav] = useState('ACCUEIL')
+  const [selectedGame, setSelectedGame] = useState('valorant')
+  const [queueActive, setQueueActive] = useState(false)
+  const [queueSeconds, setQueueSeconds] = useState(0)
+  const [playersFound, setPlayersFound] = useState(0)
 
   useEffect(() => {
-    if (queueState === 'searching') {
-      intervalRef.current = setInterval(() => setSearchTime(t => t + 1), 1000)
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      setSearchTime(0)
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [queueState])
+    if (!queueActive) { setQueueSeconds(0); setPlayersFound(0); return }
+    const t = setInterval(() => {
+      setQueueSeconds(s => s + 1)
+      setPlayersFound(p => Math.random() > 0.7 && p < 10 ? Math.min(p + 1, 10) : p)
+    }, 1000)
+    return () => clearInterval(t)
+  }, [queueActive])
 
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-  const circumference = 2 * Math.PI * 90
-  const dashOffset = circumference * (1 - Math.min(searchTime / 60, 1))
 
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/')
-  }
+  const handleSignOut = async () => { await signOut(); navigate('/') }
+
+  /* circular timer */
+  const radius = 100
+  const circ = 2 * Math.PI * radius
+  const progress = (queueSeconds % 45) / 45
 
   return (
-    <div className="flex h-screen bg-[#080808] text-white overflow-hidden">
+    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 300px', minHeight: '100vh', background: 'var(--bg)', color: '#e0e0e8', fontFamily: "'Inter', sans-serif" }}>
 
-      {/* ── LEFT: Games + Nav ── */}
-      <div className="w-60 flex-shrink-0 flex flex-col border-r border-white/[0.06] bg-[#0d0d0d]">
+      {/* ── LEFT SIDEBAR ── */}
+      <aside style={{ borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', padding: '20px 18px', gap: 20, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
         {/* Logo */}
-        <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.06]">
-          <div className="w-7 h-7 bg-brand-500 rounded flex items-center justify-center overflow-hidden">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, overflow: 'hidden', flexShrink: 0 }}>
             {navbarIcon
-              ? <img src={navbarIcon} className="w-full h-full object-contain" alt="logo" />
-              : <span className="font-black text-xs text-white">R</span>}
+              ? <img src={navbarIcon} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="logo" />
+              : <RushLogo size={36} />}
           </div>
-          <span className="font-black text-sm tracking-widest">
-            <span className="text-white">RUSH</span><span className="text-brand-500">STACK</span>
+          <span className="rs-display" style={{ fontSize: 20, fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ color: '#fff' }}>RUSH</span><span style={{ color: '#ef2434' }}>STACK</span>
           </span>
         </div>
 
-        {/* Nav links */}
-        <div className="px-3 py-3 border-b border-white/[0.06] space-y-0.5">
-          {[
-            { label: 'Accueil', to: '/', active: true },
-            { label: 'Classements', to: '/leaderboard', active: false },
-            { label: 'Social', to: '/social', active: false },
-          ].map(item => (
-            <Link key={item.to} to={item.to}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                item.active ? 'bg-brand-500/10 text-white' : 'text-white/40 hover:text-white hover:bg-white/5'
-              }`}>
-              {item.label}
-            </Link>
-          ))}
-        </div>
+        {/* CTA */}
+        <button onClick={() => setQueueActive(true)} style={{
+          width: '100%', padding: '13px 16px', borderRadius: 8,
+          background: 'linear-gradient(180deg, #ef2434, #c1121f)', color: '#fff',
+          fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.06em',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          boxShadow: '0 6px 24px rgba(239,36,52,0.35)',
+          cursor: 'pointer'
+        }}>
+          ⊕ LANCER UNE QUEUE
+        </button>
 
-        {/* Games list */}
-        <div className="flex-1 overflow-y-auto px-2 py-3">
-          <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest px-3 mb-2">Jeux</p>
-          {GAMES.map(game => (
-            <button key={game.id} onClick={() => setSelectedGame(game)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left group mb-0.5 ${
-                selectedGame.id === game.id
-                  ? `bg-gradient-to-r ${game.bg} border ${game.border}`
-                  : 'hover:bg-white/[0.04]'
-              }`}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                style={{ background: selectedGame.id === game.id ? `${game.color}22` : 'rgba(255,255,255,0.05)' }}>
-                {game.icon}
-              </div>
-              <div className="min-w-0">
-                <p className={`text-[10px] font-bold truncate ${selectedGame.id === game.id ? 'text-white' : 'text-white/50 group-hover:text-white/80'}`}>
-                  {game.name}
-                </p>
-                <p className="text-[9px] text-white/25 mt-0.5">{game.mmr.toLocaleString()} MMR</p>
-                <p className="text-[9px] text-green-400">En ligne</p>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* Saison */}
-        <div className="mx-3 mb-3 rounded-xl overflow-hidden h-20 bg-gradient-to-br from-red-900/60 to-black border border-red-500/20 flex-shrink-0 relative">
-          <div className="absolute inset-0 flex flex-col justify-end p-3">
-            <p className="text-[9px] text-white/40 font-semibold uppercase tracking-widest">Saison 2</p>
-            <p className="text-sm font-black text-brand-500 leading-none">RECHARGED</p>
-          </div>
-        </div>
-
-        {/* User */}
-        <div className="border-t border-white/[0.06] p-3 flex-shrink-0">
-          <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
-            <Avatar src={profile?.avatar_url} name={profile?.display_name || profile?.username} size="sm" online />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{profile?.display_name || profile?.username}</p>
-              <p className="text-[9px] text-white/30">@{profile?.username}</p>
-            </div>
-            <button onClick={handleSignOut} className="opacity-0 group-hover:opacity-100 text-[9px] text-white/30 hover:text-red-400 transition-all">
-              Quitter
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── CENTER: Matchmaking ── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden px-8">
-        {/* BG glow */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[600px] h-[600px] rounded-full bg-brand-500/[0.04] blur-3xl" />
-        </div>
-
-        {/* Big background R */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-          <span className="text-[32rem] font-black text-white/[0.015] leading-none">R</span>
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center w-full max-w-lg">
-          {/* Game badge */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">{selectedGame.icon}</span>
-            <p className="text-white/50 font-bold text-xs tracking-widest uppercase">{selectedGame.name}</p>
-          </div>
-
-          <h1 className="text-3xl lg:text-5xl font-black text-white text-center mb-2 tracking-tight leading-none">
-            {queueState === 'idle' ? (
-              <>JOUE.<br /><span className="text-brand-500">COMPÈTE.</span></>
-            ) : (
-              'RECHERCHE EN COURS'
+        {/* Menu */}
+        <div>
+          <p className="rs-mono" style={{ color: 'var(--muted-2)', padding: '0 6px 10px' }}>MENU</p>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[
+              { label: 'Accueil', to: '/' },
+              { label: 'Profil', to: '/profile' },
+              { label: 'Amis', to: '/social' },
+              { label: 'Classements', to: '/leaderboard' },
+            ].map(item => (
+              <Link key={item.to} to={item.to} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 12px', borderRadius: 6,
+                background: item.to === '/' ? 'rgba(239,36,52,0.08)' : 'transparent',
+                color: item.to === '/' ? '#ef2434' : '#c0c0c8',
+                fontWeight: 500, fontSize: 14, textDecoration: 'none',
+                position: 'relative'
+              }}>
+                {item.to === '/' && <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 2, background: '#ef2434', borderRadius: 2 }} />}
+                {item.label}
+              </Link>
+            ))}
+            {(profile?.role === 'admin' || profile?.role === 'moderator') && (
+              <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 6, color: '#c0c0c8', fontWeight: 500, fontSize: 14, textDecoration: 'none' }}>
+                Admin
+              </Link>
             )}
-          </h1>
-          <p className="text-white/30 text-sm mb-10 text-center">
-            {queueState === 'idle' ? 'Prêt à affronter la compétition ?' : 'Recherche de partie en cours...'}
-          </p>
+          </nav>
+        </div>
 
-          {/* Ring */}
-          <div className="relative flex items-center justify-center mb-8">
-            <svg width="200" height="200" className="-rotate-90">
-              <circle cx="100" cy="100" r="85" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
-              {queueState === 'searching' ? (
-                <circle cx="100" cy="100" r="85" fill="none" stroke="#e63946" strokeWidth="5"
-                  strokeLinecap="round" strokeDasharray={2 * Math.PI * 85}
-                  strokeDashoffset={2 * Math.PI * 85 * (1 - Math.min(searchTime / 60, 1))}
-                  className="transition-all duration-1000" />
-              ) : (
-                <circle cx="100" cy="100" r="85" fill="none" stroke="rgba(230,57,70,0.2)"
-                  strokeWidth="5" strokeDasharray="6 5" />
-              )}
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              {queueState === 'idle' ? (
-                <button onClick={() => setQueueState('searching')}
-                  className="w-24 h-24 rounded-full bg-brand-500 hover:bg-brand-600 transition-all hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl shadow-brand-500/40"
-                  style={{ boxShadow: '0 0 40px rgba(230,57,70,0.5)' }}>
-                  <span className="text-white font-black text-xs tracking-widest">JOUER</span>
-                </button>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Temps d'attente</p>
-                  <p className="text-4xl font-black text-white font-mono">{fmt(searchTime)}</p>
-                  <p className="text-white/20 text-[10px] mt-1">Estimé : 00:45</p>
-                </div>
-              )}
-            </div>
+        {/* Jeux suivis */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 6px 10px' }}>
+            <p className="rs-mono" style={{ color: 'var(--muted-2)' }}>JEUX SUIVIS</p>
           </div>
-
-          {/* Info row */}
-          <div className="flex gap-8 text-center mb-6">
-            {[['Mode', 'Compétitif'], ['Région', 'Europe'], ['Rôle', 'Duelliste'], ['Groupe', 'Solo']].map(([k, v]) => (
-              <div key={k}>
-                <p className="text-[9px] text-white/25 uppercase tracking-widest">{k}</p>
-                <p className="text-xs font-black text-white mt-0.5">{v}</p>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {TRACKED_GAMES.map(g => (
+              <button key={g.id} onClick={() => setSelectedGame(g.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '8px 8px', borderRadius: 6,
+                background: selectedGame === g.id ? 'rgba(239,36,52,0.06)' : 'transparent',
+                textAlign: 'left', cursor: 'pointer', border: 'none', width: '100%'
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
+                  <SmallGameLogo game={g.id} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p className="rs-display" style={{ fontSize: 12, fontWeight: 600, color: '#e0e0e8', letterSpacing: '0.03em' }}>{g.name}</p>
+                  <p style={{ fontSize: 10, color: 'var(--muted)' }}>{g.mmr}</p>
+                </div>
+              </button>
             ))}
           </div>
+        </div>
 
-          {/* Button */}
-          {queueState === 'searching' ? (
-            <button onClick={() => setQueueState('idle')}
-              className="px-8 py-2.5 border border-brand-500/60 rounded-lg text-white text-xs font-bold tracking-wider hover:bg-brand-500/10 transition-colors">
-              ANNULER LA RECHERCHE
-            </button>
-          ) : (
-            <button onClick={() => setQueueState('searching')}
-              className="px-8 py-2.5 bg-brand-500 rounded-lg text-white text-xs font-bold tracking-wider hover:bg-brand-600 transition-colors"
-              style={{ boxShadow: '0 0 20px rgba(230,57,70,0.4)' }}>
-              TROUVER UNE PARTIE
-            </button>
-          )}
+        {/* Season banner */}
+        <div style={{
+          position: 'relative', borderRadius: 10, overflow: 'hidden',
+          background: 'linear-gradient(135deg, #2a0610 0%, #0a0608 100%)',
+          padding: '16px 14px', minHeight: 120, border: '1px solid #2a0a14'
+        }}>
+          <div style={{ position: 'relative' }}>
+            <p className="rs-mono" style={{ color: '#bababa', marginBottom: 4 }}>SAISON 2</p>
+            <p className="rs-display" style={{ fontSize: 22, fontWeight: 700, color: '#ef2434', letterSpacing: '0.04em', lineHeight: 1, marginBottom: 16 }}>RECHARGED</p>
+            <button style={{
+              padding: '7px 12px', borderRadius: 6, background: '#ef2434', color: '#fff',
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+              fontFamily: "'Rajdhani', sans-serif", cursor: 'pointer'
+            }}>VOIR LES RÉCOMPENSES</button>
+          </div>
+        </div>
 
-          {/* Steps */}
-          {queueState === 'searching' && (
-            <div className="flex items-center gap-0 mt-8">
-              {QUEUE_STEPS.map((step, i) => (
-                <div key={step} className="flex items-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${i === 0 ? 'border-brand-500 bg-brand-500/20' : 'border-white/10'}`}>
-                      {i === 0 && <div className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse" />}
-                    </div>
-                    <p className="text-[7px] font-bold text-white/20 uppercase tracking-wider text-center w-14">{step}</p>
+        <div style={{ flex: 1 }} />
+
+        {/* User + sign out */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
+          <SeedAvatar seed={0} size={34} ring="#ef2434" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.display_name || profile?.username}</p>
+            <p style={{ fontSize: 10, color: 'var(--muted)' }}>@{profile?.username}</p>
+          </div>
+          <button onClick={handleSignOut} style={{ fontSize: 10, color: 'var(--muted-2)', cursor: 'pointer', background: 'none', border: 'none' }}>Quitter</button>
+        </div>
+      </aside>
+
+      {/* ── MAIN ── */}
+      <main style={{ display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+        {/* Top nav */}
+        <header style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+          <nav style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+            {TOP_NAV.map(n => (
+              <button key={n} onClick={() => setActiveNav(n)} style={{
+                padding: '8px 16px', position: 'relative',
+                color: activeNav === n ? '#ef2434' : '#c0c0c8',
+                fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.08em', fontSize: 13,
+                background: 'none', border: 'none', cursor: 'pointer'
+              }}>
+                {n}
+                {activeNav === n && <span style={{ position: 'absolute', left: 14, right: 14, bottom: 0, height: 2, background: '#ef2434', borderRadius: 2 }} />}
+              </button>
+            ))}
+          </nav>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 1, height: 28, background: 'var(--line)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <SeedAvatar seed={0} size={36} ring="#ef2434" />
+              <div>
+                <p style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>{profile?.display_name || profile?.username}</p>
+                <p style={{ fontSize: 11, color: 'var(--muted)' }}>Immortal 3 · 3,250 MMR</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Hero */}
+          <section style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(180deg, #14080a, #0e0608)', border: '1px solid var(--line)', minHeight: 260 }}>
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '55%' }}>
+              {heroCharacter
+                ? <img src={heroCharacter} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} alt="" />
+                : <HeroArt />}
+            </div>
+            <div style={{ position: 'relative', padding: '32px 36px', maxWidth: 560 }}>
+              <p className="rs-mono" style={{ color: '#ef2434', fontWeight: 700, marginBottom: 14 }}>RUSH STACK</p>
+              <h1 className="rs-display" style={{ fontSize: 42, lineHeight: 1.05, margin: '0 0 16px', fontWeight: 700, letterSpacing: '0.01em', color: '#fff' }}>
+                COMPÈTE. PROGRESSE.<br />
+                <span style={{ color: '#ef2434' }}>DEVIENS UNE LÉGENDE.</span>
+              </h1>
+              <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6, maxWidth: 400, margin: '0 0 24px' }}>
+                Affronte les meilleurs joueurs, grimpe les classements et marque l'histoire dans chaque jeu.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button onClick={() => setQueueActive(true)} style={{
+                  padding: '12px 20px', borderRadius: 8,
+                  background: 'linear-gradient(180deg, #ef2434, #c1121f)', color: '#fff',
+                  fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 12, letterSpacing: '0.08em',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 18px rgba(239,36,52,0.4)', cursor: 'pointer', border: 'none'
+                }}>
+                  LANCER UNE QUEUE
+                </button>
+                <Link to="/leaderboard" style={{
+                  padding: '12px 20px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.03)', color: '#fff',
+                  border: '1px solid #3a3a42',
+                  fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 12, letterSpacing: '0.08em',
+                  textDecoration: 'none', display: 'flex', alignItems: 'center'
+                }}>
+                  VOIR LES CLASSEMENTS
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* Queue panel */}
+          <section style={{ ...S.panel, padding: 24 }}>
+            <p className="rs-display" style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em', marginBottom: 20, textTransform: 'uppercase', color: '#fff' }}>
+              {queueActive ? 'File d\'attente en cours' : 'Lancement de la file d\'attente'}
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: 16 }}>
+              {/* Game info */}
+              <div style={{ ...S.panel2, padding: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 14, borderBottom: '1px solid var(--line)', marginBottom: 14 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 6, overflow: 'hidden' }}>
+                    <SmallGameLogo game={selectedGame} />
                   </div>
-                  {i < QUEUE_STEPS.length - 1 && <div className={`w-8 h-px mb-5 ${i === 0 ? 'bg-brand-500/30' : 'bg-white/8'}`} />}
+                  <p className="rs-display" style={{ fontSize: 18, fontWeight: 700, letterSpacing: '0.05em', color: '#fff' }}>{TRACKED_GAMES.find(g => g.id === selectedGame)?.name ?? 'VALORANT'}</p>
+                </div>
+                {[['MODE', 'COMPÉTITIF'], ['RÔLE', 'AU CHOIX'], ['RÉGION', 'EUROPE (PARIS)']].map(([l, v]) => (
+                  <div key={l} style={{ padding: '10px 0', borderBottom: '1px solid #1f1f24' }}>
+                    <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 4 }}>{l}</p>
+                    <p className="rs-display" style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.03em', color: '#e0e0e8' }}>{v}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Timer */}
+              <div style={{ ...S.panel2, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+                <div style={{ position: 'relative', width: 240, height: 240, display: 'grid', placeItems: 'center' }}>
+                  <svg width="240" height="240" style={{ position: 'absolute', inset: 0 }}>
+                    <defs>
+                      <filter id="redglow"><feGaussianBlur stdDeviation="4" /></filter>
+                      <linearGradient id="ringG" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#ff3a48" />
+                        <stop offset="1" stopColor="#7a0814" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="120" cy="120" r="110" fill="none" stroke="#220a10" strokeWidth="1" />
+                    <circle cx="120" cy="120" r={radius} fill="none" stroke="#220a10" strokeWidth="6" />
+                    <circle cx="120" cy="120" r="118" fill="none" stroke="#3a0a14" strokeWidth="1" strokeDasharray="2 6" />
+                    {queueActive && <>
+                      <circle cx="120" cy="120" r={radius} fill="none" stroke="url(#ringG)" strokeWidth="10"
+                        strokeDasharray={`${circ * progress} ${circ}`} strokeLinecap="round"
+                        transform="rotate(-90 120 120)" filter="url(#redglow)" opacity="0.7" />
+                      <circle cx="120" cy="120" r={radius} fill="none" stroke="url(#ringG)" strokeWidth="4"
+                        strokeDasharray={`${circ * progress} ${circ}`} strokeLinecap="round"
+                        transform="rotate(-90 120 120)" />
+                    </>}
+                    {[...Array(60)].map((_, i) => {
+                      const a = (i / 60) * Math.PI * 2 - Math.PI / 2
+                      const x1 = 120 + Math.cos(a) * 122; const y1 = 120 + Math.sin(a) * 122
+                      const x2 = 120 + Math.cos(a) * 126; const y2 = 120 + Math.sin(a) * 126
+                      return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#3a0a14" strokeWidth={i % 5 === 0 ? 1.5 : 0.5} />
+                    })}
+                  </svg>
+                  <div style={{ textAlign: 'center', zIndex: 1 }}>
+                    <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 8 }}>
+                      {queueActive ? 'Recherche de partie' : 'Prêt à jouer'}
+                    </p>
+                    <p className="rs-display" style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, letterSpacing: '0.02em', color: '#fff' }}>
+                      {fmt(queueSeconds)}
+                    </p>
+                    <p className="rs-mono" style={{ color: 'var(--muted-2)', marginTop: 10 }}>Temps estimé : 00:45</p>
+                  </div>
+                </div>
+                {queueActive
+                  ? <button onClick={() => setQueueActive(false)} style={{ padding: '10px 22px', borderRadius: 6, border: '1px solid #3a3a42', color: '#c0c0c8', fontSize: 11, letterSpacing: '0.1em', fontWeight: 600, background: 'rgba(0,0,0,0.2)', fontFamily: "'Rajdhani', sans-serif", cursor: 'pointer' }}>ANNULER LA RECHERCHE</button>
+                  : <button onClick={() => setQueueActive(true)} style={{ padding: '10px 22px', borderRadius: 6, background: '#ef2434', color: '#fff', fontSize: 11, letterSpacing: '0.1em', fontWeight: 700, fontFamily: "'Rajdhani', sans-serif", cursor: 'pointer', boxShadow: '0 4px 16px rgba(239,36,52,0.4)' }}>TROUVER UNE PARTIE</button>
+                }
+              </div>
+
+              {/* MMR info */}
+              <div style={{ ...S.panel2, padding: 18 }}>
+                <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 10 }}>MMR ACTUEL</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+                  <ImmortalBadge size={42} />
+                  <div>
+                    <p className="rs-display" style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.04em', color: '#fff' }}>IMMORTAL 3</p>
+                    <p className="rs-display" style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>3,250</p>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 6 }}>PLAGE MMR</p>
+                  <p className="rs-display" style={{ fontSize: 16, fontWeight: 600, color: '#e0e0e8' }}>3,150 — 3,350</p>
+                </div>
+                <div>
+                  <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 6 }}>JOUEURS TROUVÉS</p>
+                  <p className="rs-display" style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>
+                    <span style={{ color: '#ef2434' }}>{playersFound}</span> / 10
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Steps */}
+            <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', alignItems: 'start', position: 'relative' }}>
+              {STEPS.map((step, i) => (
+                <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                  {i < STEPS.length - 1 && (
+                    <div style={{ position: 'absolute', top: 22, left: 'calc(50% + 24px)', right: 'calc(-50% + 24px)', height: 1, background: 'repeating-linear-gradient(90deg, #3a3a42 0 4px, transparent 4px 8px)' }} />
+                  )}
+                  <div style={{
+                    width: 46, height: 46, borderRadius: '50%',
+                    border: i === 0 && queueActive ? '1.5px solid #ef2434' : '1px solid #2a2a31',
+                    background: i === 0 && queueActive ? 'rgba(239,36,52,0.08)' : '#0e0e12',
+                    display: 'grid', placeItems: 'center',
+                    color: i === 0 && queueActive ? '#ef2434' : '#5a5a62',
+                    boxShadow: i === 0 && queueActive ? '0 0 20px rgba(239,36,52,0.3)' : 'none',
+                    position: 'relative', zIndex: 1, fontSize: 16
+                  }}>
+                    {i === 0 ? '◎' : i === 1 ? '◉' : i === 2 ? '✓' : i === 3 ? '⟳' : '⚔'}
+                  </div>
+                  <p className="rs-mono" style={{ marginTop: 10, color: i === 0 && queueActive ? '#fff' : '#6a6a72', fontWeight: 600, textAlign: 'center' }}>{step}</p>
+                  {i === 0 && queueActive && <p style={{ fontSize: 10, color: '#ef2434', marginTop: 2 }}>En cours</p>}
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      </div>
+          </section>
 
-      {/* ── RIGHT: Profile + Stats ── */}
-      <div className="w-64 flex-shrink-0 flex flex-col border-l border-white/[0.06] bg-[#0d0d0d] overflow-y-auto">
+          {/* Popular games */}
+          <section>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+              <p className="rs-display" style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#fff' }}>Jeux populaires</p>
+              <button className="rs-mono" style={{ color: '#ef2434', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>VOIR TOUS LES JEUX</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }}>
+              {POPULAR_GAMES.map(g => (
+                <div key={g.id} style={{ ...S.panel, overflow: 'hidden', cursor: 'pointer', transition: 'transform .2s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.borderColor = '#ef2434' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)' }}>
+                  <div style={{ aspectRatio: '4/3', position: 'relative' }}>
+                    <GameTile game={g.id} />
+                  </div>
+                  <div style={{ padding: '10px 12px' }}>
+                    <p className="rs-display" style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.05em', color: '#fff' }}>{g.name}</p>
+                    <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{g.players}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      {/* ── RIGHT SIDEBAR ── */}
+      <aside style={{ borderLeft: '1px solid var(--line)', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
 
         {/* Profile */}
-        <div className="p-4 border-b border-white/[0.06]">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[9px] font-bold text-white/25 uppercase tracking-widest">Profil</p>
-            <Link to="/profile" className="text-[9px] font-bold text-brand-500 hover:text-brand-400 uppercase tracking-widest">
-              Voir le profil
-            </Link>
-          </div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative">
-              <Avatar src={profile?.avatar_url} name={profile?.display_name || profile?.username} size="lg" />
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0d0d0d]" />
-            </div>
+        <div style={{ ...S.panel, padding: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            <SeedAvatar seed={0} size={54} ring="#ef2434" />
             <div>
-              <div className="flex items-center gap-1">
-                <p className="font-black text-white text-sm">{profile?.display_name || profile?.username}</p>
-                <div className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-[7px] text-white font-bold">✓</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <p className="rs-display" style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{profile?.display_name || profile?.username}</p>
               </div>
-              <p className="text-[10px] text-green-400">● En ligne</p>
+              <div style={{ fontSize: 11, color: '#28d17c', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#28d17c', flexShrink: 0 }} /> En ligne
+              </div>
             </div>
           </div>
-
-          {/* Rank */}
-          <div className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/[0.05] mb-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-white" />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginBottom: 12 }}>
+            <ImmortalBadge size={36} />
             <div>
-              <p className="text-xs font-black text-white">IMMORTAL 3</p>
-              <p className="text-[10px] text-white/30">{selectedGame.mmr.toLocaleString()} MMR</p>
+              <p className="rs-display" style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', color: '#fff' }}>IMMORTAL 3</p>
+              <p style={{ fontSize: 11, color: 'var(--muted)' }}>3,250 MMR</p>
             </div>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-1.5">
-            {[['1,248', 'Matchs'], ['712', 'Victoires'], ['57%', 'Winrate']].map(([v, l]) => (
-              <div key={l} className="text-center p-2 bg-white/[0.03] rounded-lg">
-                <p className="text-sm font-black text-white">{v}</p>
-                <p className="text-[8px] text-white/25 uppercase">{l}</p>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ height: 4, background: '#26262c', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ width: '92%', height: '100%', background: 'linear-gradient(90deg, #c1121f, #ef2434)' }} />
+            </div>
+            <p style={{ fontSize: 10, color: 'var(--muted)', textAlign: 'right', marginTop: 4 }}>3,250 / 3,500</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4 }}>
+            {[['MATCHS', '1,248'], ['VICTOIRES', '712'], ['WINRATE', '57%']].map(([l, v]) => (
+              <div key={l}>
+                <p className="rs-mono" style={{ color: 'var(--muted)', marginBottom: 4, fontSize: 9 }}>{l}</p>
+                <p className="rs-display" style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{v}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Queue info */}
-        {queueState === 'searching' && (
-          <div className="p-4 border-b border-white/[0.06]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[9px] font-bold text-white/25 uppercase tracking-widest">File en cours</p>
-              <span className="text-[9px] font-bold text-brand-500">Détails</span>
-            </div>
-            <div className="space-y-2">
-              {[
-                ['🎮', 'Mode', 'Compétitif', ''],
-                ['📍', 'Région', 'Europe (Paris)', ''],
-                ['📶', 'Ping', '23ms', 'text-green-400'],
-              ].map(([icon, label, value, color]) => (
-                <div key={label} className="flex items-center justify-between text-[10px]">
-                  <div className="flex items-center gap-1.5 text-white/35">{icon} {label}</div>
-                  <span className={`font-semibold ${color || 'text-white'}`}>{value}</span>
-                </div>
-              ))}
-            </div>
+        {/* Ranking */}
+        <div style={{ ...S.panel, padding: 18 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+            <p className="rs-mono" style={{ fontWeight: 700, color: '#e0e0e8' }}>CLASSEMENT GLOBAL</p>
+            <Link to="/leaderboard" className="rs-mono" style={{ color: '#ef2434', fontWeight: 700, fontSize: 9, textDecoration: 'none' }}>VOIR TOUT</Link>
           </div>
-        )}
-
-        {/* Classement */}
-        <div className="p-4 border-b border-white/[0.06]">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[9px] font-bold text-white/25 uppercase tracking-widest">Top Joueurs</p>
-            <Link to="/leaderboard" className="text-[9px] text-brand-500 hover:text-brand-400">Voir tout</Link>
-          </div>
-          <div className="space-y-2">
-            {LEADERBOARD.map(p => (
-              <div key={p.name} className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-white/20 w-3">{p.rank}</span>
-                <div className="relative">
-                  <Avatar name={p.name} size="xs" />
-                  {p.online && <div className="absolute -bottom-px -right-px w-2 h-2 bg-green-500 rounded-full border border-[#0d0d0d]" />}
-                </div>
-                <p className="flex-1 text-[10px] font-semibold text-white/70 truncate">{p.name}</p>
-                <p className="text-[9px] font-mono text-white/30">{p.mmr.toLocaleString()}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {RANKING.map(r => (
+              <div key={r.rank} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <p className="rs-display" style={{ width: 24, fontSize: 12, fontWeight: 700, color: r.rank <= 3 ? '#ef2434' : '#8a8a93' }}>#{r.rank}</p>
+                <SeedAvatar seed={r.seed} size={28} />
+                <p style={{ flex: 1, fontSize: 12, fontWeight: r.me ? 700 : 500, color: r.me ? '#fff' : '#c0c0c8' }}>{r.name}</p>
+                <p className="rs-display" style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>{r.mmr}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Derniers joueurs */}
-        <div className="p-4 flex-1">
-          <p className="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-3">Derniers Rencontrés</p>
-          <div className="space-y-2">
-            {RECENT_PLAYERS.map(p => (
-              <div key={p.name} className="flex items-center gap-2 group">
-                <div className="relative">
-                  <Avatar name={p.name} size="xs" />
-                  <div className="absolute -bottom-px -right-px w-2 h-2 bg-green-500 rounded-full border border-[#0d0d0d]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-white/70 truncate">{p.name}</p>
-                  <p className="text-[9px] text-white/25">En ligne</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-mono text-white/30">{p.mmr.toLocaleString()}</span>
-                  <button className="w-5 h-5 rounded-full bg-white/5 hover:bg-brand-500/20 text-white/20 hover:text-brand-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                    <Plus className="w-2.5 h-2.5" />
-                  </button>
+        {/* Activity */}
+        <div style={{ ...S.panel, padding: 18 }}>
+          <p className="rs-mono" style={{ fontWeight: 700, marginBottom: 14, color: '#e0e0e8' }}>ACTIVITÉ RÉCENTE</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {ACTIVITY.map((a, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12 }}>
+                <SeedAvatar seed={a.seed} size={34} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#e0e0e8' }}>{a.name}</p>
+                  <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.3 }}>{a.action}</p>
+                  <p style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 2 }}>{a.time}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </aside>
     </div>
   )
 }
 
-// ─── LANDING (logged-out view) ────────────────────────────────────────────────
+/* ── LANDING (non connecté) ────────────────────────────────────── */
 function LandingView() {
   const { navbarIcon } = useSiteIcons()
   const heroCharacter = useMediaSection('hero_character')
-
+  const STATS = [
+    { value: '128K+', label: 'JOUEURS ACTIFS' },
+    { value: '2.4M+', label: 'MATCHS JOUÉS' },
+    { value: '58', label: 'JEUX SUPPORTÉS' },
+    { value: '24/7', label: 'SUPPORT ACTIF' },
+  ]
   return (
-    <div className="min-h-screen bg-[#080808] text-white overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 lg:px-12 h-16 bg-[#080808]/90 backdrop-blur-md border-b border-white/[0.06]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand-500 rounded flex items-center justify-center overflow-hidden">
-            {navbarIcon ? <img src={navbarIcon} className="w-full h-full object-contain" alt="logo" /> : <span className="font-black text-sm text-white">R</span>}
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: '#e0e0e8', fontFamily: "'Inter', sans-serif" }}>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: 64, background: 'rgba(10,10,12,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, overflow: 'hidden' }}>
+            {navbarIcon ? <img src={navbarIcon} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="logo" /> : <RushLogo size={32} />}
           </div>
-          <span className="font-black text-lg tracking-widest"><span className="text-white">RUSH</span><span className="text-brand-500">STACK</span></span>
+          <span className="rs-display" style={{ fontSize: 18, fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ color: '#fff' }}>RUSH</span><span style={{ color: '#ef2434' }}>STACK</span>
+          </span>
         </div>
-        <div className="hidden lg:flex items-center gap-8">
-          {['ACCUEIL', 'JEUX', 'CLASSEMENTS', 'LIGUES', 'COMMUNAUTÉ', 'À PROPOS'].map(item => (
-            <a key={item} href="#" className="text-xs font-semibold text-white/50 hover:text-white tracking-widest transition-colors">{item}</a>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['ACCUEIL', 'JEUX', 'CLASSEMENTS', 'LIGUES', 'COMMUNAUTÉ', 'À PROPOS'].map(n => (
+            <button key={n} className="rs-display" style={{ padding: '8px 16px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 12, letterSpacing: '0.08em', background: 'none', border: 'none', cursor: 'pointer' }}>{n}</button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="text-xs font-semibold text-white/60 hover:text-white tracking-wider transition-colors">SE CONNECTER</Link>
-          <Link to="/register" className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded tracking-wider transition-colors">S'INSCRIRE</Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link to="/login" className="rs-display" style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.08em', textDecoration: 'none' }}>SE CONNECTER</Link>
+          <Link to="/register" style={{ padding: '9px 18px', background: '#ef2434', color: '#fff', fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, fontSize: 12, letterSpacing: '0.08em', borderRadius: 6, textDecoration: 'none' }}>S'INSCRIRE</Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative min-h-screen flex items-center pt-16">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#080808] via-[#080808]/80 to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-1/2 flex items-center justify-center">
-            <div className="absolute w-96 h-96 bg-brand-500/10 rounded-full blur-3xl" />
-            <div className="relative z-10 text-[20rem] font-black text-white/[0.03] leading-none select-none">R</div>
-            {heroCharacter && (
-              <img src={heroCharacter} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="" />
-            )}
-            {/* Floating stats */}
-            <div className="absolute top-1/3 left-8 bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 z-20">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Win Rate</p>
-              <p className="text-green-400 font-black text-sm">+58.3%</p>
-            </div>
-            <div className="absolute bottom-1/3 right-8 bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 z-20">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">MMR</p>
-              <p className="text-white font-black text-sm">3,480</p>
-            </div>
+      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 64 }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, #0a0a0c, rgba(10,10,12,0.8) 40%, transparent)' }} />
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '55%' }}>
+            {heroCharacter
+              ? <img src={heroCharacter} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} alt="" />
+              : <HeroArt />}
           </div>
         </div>
-
-        <div className="relative z-20 px-6 lg:px-12 max-w-2xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-px w-8 bg-brand-500" />
-            <p className="text-[10px] font-bold text-brand-500 tracking-widest uppercase">La compétition commence ici /</p>
-            <div className="h-px w-8 bg-brand-500" />
+        <div style={{ position: 'relative', padding: '0 64px', maxWidth: 680 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+            <div style={{ height: 1, width: 32, background: '#ef2434' }} />
+            <p className="rs-mono" style={{ color: '#ef2434', fontWeight: 700 }}>LA COMPÉTITION COMMENCE ICI /</p>
+            <div style={{ height: 1, width: 32, background: '#ef2434' }} />
           </div>
-          <h1 className="text-6xl lg:text-8xl font-black leading-none mb-6">
-            <span className="text-white block">JOUE.</span>
-            <span className="text-white block">COMPÈTE.</span>
-            <span className="text-brand-500 block">MONTE EN<br />RANK.</span>
+          <h1 className="rs-display" style={{ fontSize: 88, lineHeight: 1, marginBottom: 24, fontWeight: 700 }}>
+            <span style={{ color: '#fff', display: 'block' }}>JOUE.</span>
+            <span style={{ color: '#fff', display: 'block' }}>COMPÈTE.</span>
+            <span style={{ color: '#ef2434', display: 'block' }}>MONTE EN</span>
+            <span style={{ color: '#ef2434', display: 'block' }}>RANK.</span>
           </h1>
-          <p className="text-white/40 text-base mb-8 leading-relaxed max-w-md">
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16, lineHeight: 1.7, maxWidth: 480, marginBottom: 36 }}>
             Rush Stack est la plateforme ultime de matchmaking multi-jeux. Affronte les meilleurs, grimpe les classements et deviens une légende.
           </p>
-          <div className="flex items-center gap-4">
-            <Link to="/register" className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded transition-colors tracking-wider"
-              style={{ boxShadow: '0 0 30px rgba(230,57,70,0.4)' }}>
-              COMMENCER <ChevronRight className="w-4 h-4" />
+          <div style={{ display: 'flex', gap: 16 }}>
+            <Link to="/register" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 24px', background: '#ef2434', color: '#fff', fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', borderRadius: 8, textDecoration: 'none', boxShadow: '0 0 30px rgba(239,36,52,0.4)' }}>
+              COMMENCER <ChevronRight size={16} />
             </Link>
-            <button className="px-6 py-3 border border-white/20 hover:border-white/40 text-white/70 hover:text-white font-bold text-sm rounded transition-colors tracking-wider">
+            <button style={{ padding: '14px 24px', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.7)', fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', borderRadius: 8, background: 'none', cursor: 'pointer' }}>
               VOIR LES JEUX
             </button>
           </div>
         </div>
+        {/* Floating stats */}
+        <div style={{ position: 'absolute', right: '30%', top: '35%' }}>
+          <div style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 18px' }}>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Win Rate</p>
+            <p style={{ color: '#28d17c', fontWeight: 900, fontSize: 16 }}>+58.3%</p>
+          </div>
+        </div>
+        <div style={{ position: 'absolute', right: '10%', bottom: '35%' }}>
+          <div style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 18px' }}>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>MMR</p>
+            <p style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>3,480</p>
+          </div>
+        </div>
       </section>
 
-      {/* Stats bar */}
-      <div className="border-y border-white/[0.06] bg-white/[0.02] py-6">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {STATS.map(({ value, label }) => (
-            <div key={label} className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0" />
-              <div>
-                <p className="text-lg font-black text-white">{value}</p>
-                <p className="text-[10px] text-white/30 tracking-wider">{label}</p>
-              </div>
+      <div style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'rgba(255,255,255,0.02)', padding: '24px 64px', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 32 }}>
+        {STATS.map(({ value, label }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef2434', flexShrink: 0 }} />
+            <div>
+              <p className="rs-display" style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{value}</p>
+              <p className="rs-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      {/* CTA */}
-      <section className="py-24 text-center">
-        <div className="max-w-2xl mx-auto px-6">
-          <p className="text-[10px] text-brand-500 font-bold tracking-widest uppercase mb-4">Rejoins la compétition</p>
-          <h2 className="text-4xl font-black text-white mb-4">PRÊT À DOMINER ?</h2>
-          <p className="text-white/40 mb-8">Crée ton compte gratuitement et rejoins des milliers de joueurs.</p>
-          <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm rounded tracking-wider transition-colors">
-            COMMENCER MAINTENANT <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-8 px-6 lg:px-12 flex items-center justify-between">
-        <span className="font-black text-sm tracking-widest"><span className="text-white">RUSH</span><span className="text-brand-500">STACK</span></span>
-        <p className="text-white/20 text-xs">© 2026 Rush Stack. Tous droits réservés.</p>
+      <footer style={{ borderTop: '1px solid var(--line)', padding: '24px 64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span className="rs-display" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.04em' }}>
+          <span style={{ color: '#fff' }}>RUSH</span><span style={{ color: '#ef2434' }}>STACK</span>
+        </span>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>© 2026 Rush Stack. Tous droits réservés.</p>
       </footer>
     </div>
   )
 }
 
-// ─── SMART HOME ───────────────────────────────────────────────────────────────
+/* ── SMART HOME ──────────────────────────────────────────────────── */
 export default function UnifiedHomePage() {
   const { isAuthenticated, isLoading } = useAuthStore()
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="text-2xl font-black tracking-widest">
-            <span className="text-white">RUSH</span><span className="text-brand-500">STACK</span>
-          </div>
-          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-        </div>
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.textContent = CSS_VARS
+    document.head.appendChild(style)
+    return () => { document.head.removeChild(style) }
+  }, [])
+
+  if (isLoading) return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <p className="rs-display" style={{ fontSize: 24, fontWeight: 700, letterSpacing: '0.04em', marginBottom: 20 }}>
+          <span style={{ color: '#fff' }}>RUSH</span><span style={{ color: '#ef2434' }}>STACK</span>
+        </p>
+        <div style={{ width: 32, height: 32, border: '2px solid #ef2434', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
       </div>
-    )
-  }
+    </div>
+  )
 
   return isAuthenticated ? <LobbyView /> : <LandingView />
 }
