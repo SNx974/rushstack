@@ -55,10 +55,12 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
+      {/* Play page — full screen, no sidebar */}
+      <Route path="/play" element={<ProtectedRoute><PlayPage /></ProtectedRoute>} />
+
       {/* App */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/play" element={<PlayPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/social" element={<SocialPage />} />

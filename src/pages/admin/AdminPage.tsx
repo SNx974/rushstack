@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Shield, Users, Swords, AlertTriangle, Ban, BarChart3, Image } from 'lucide-react'
+import { Shield, Users, Swords, AlertTriangle, Ban, BarChart3, Image, Gamepad2 } from 'lucide-react'
 import MediaManager from './MediaManager'
+import GamesAdmin from './GamesAdmin'
 import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
+import { getConflicts, resolveConflict, type MatchSession } from '@/services/match.service'
 
 const MOCK_USERS = [
   { id: '1', username: 'ShadowKiller99', role: 'player', banned: false, matches: 847, joined: '2024-01-15' },
@@ -22,11 +24,27 @@ const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
+  { id: 'games', label: 'Jeux', icon: Gamepad2 },
+  { id: 'conflicts', label: 'Conflits', icon: Swords },
   { id: 'media', label: 'Médias', icon: Image },
 ]
 
 export default function AdminPage() {
   const [section, setSection] = useState('overview')
+  const [conflicts, setConflicts] = useState<MatchSession[]>([])
+
+  useEffect(() => {
+    if (section === 'conflicts') {
+      getConflicts().then(setConflicts)
+    }
+  }, [section])
+
+  const handleResolve = async (matchId: string, winner: 'A' | 'B') => {
+    try {
+      await resolveConflict(matchId, winner)
+      setConflicts(c => c.filter(x => x.id !== matchId))
+    } catch { /* ignore */ }
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
@@ -138,6 +156,33 @@ export default function AdminPage() {
       )}
 
       {section === 'media' && <MediaManager />}
+      {section === 'games' && <GamesAdmin />}
+
+      {section === 'conflicts' && (
+        <div className="space-y-3">
+          {conflicts.length === 0 && (
+            <div className="card text-center text-white/40 py-8">Aucun conflit en attente ✓</div>
+          )}
+          {conflicts.map(m => (
+            <div key={m.id} className="card flex items-start gap-4">
+              <Swords className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-white text-sm">Match #{m.id.slice(0, 8)}</span>
+                  <Badge variant="warning">conflit</Badge>
+                </div>
+                <p className="text-xs text-white/40 mt-0.5">
+                  Rapports contradictoires — désignez le vainqueur
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button size="sm" onClick={() => handleResolve(m.id, 'A')}>Équipe A gagne</Button>
+                <Button size="sm" variant="ghost" onClick={() => handleResolve(m.id, 'B')}>Équipe B gagne</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {section === 'disputes' && (
         <div className="space-y-2">
