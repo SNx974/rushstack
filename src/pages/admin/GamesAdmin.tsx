@@ -118,8 +118,8 @@ function FormatEditor({ game, onRefresh }: { game: Game; onRefresh: () => void }
             fontSize: 13, fontWeight: 700, color: '#fff',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            {f.name}
-            <span style={{ fontSize: 11, color: S.muted }}>({f.map_count} maps)</span>
+            {f.type}
+            <span style={{ fontSize: 11, color: S.muted }}>{f.active ? '● actif' : '○ inactif'}</span>
           </div>
         ))}
         {(game.formats ?? []).length === 0 && (
@@ -206,8 +206,8 @@ function CustomRulesEditor({ game, onRefresh }: { game: Game; onRefresh: () => v
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {(game.custom_rules ?? []).map(r => (
           <div key={r.id} style={{ ...S.panel2, padding: '7px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, color: S.muted, fontFamily: 'monospace', minWidth: 120 }}>{r.rule_key}</span>
-            <span style={{ fontSize: 13, color: '#fff', flex: 1 }}>{r.rule_value}</span>
+            <span style={{ fontSize: 12, color: S.muted, fontFamily: 'monospace', minWidth: 120 }}>{r.key}</span>
+            <span style={{ fontSize: 13, color: '#fff', flex: 1 }}>{r.value}</span>
             <button onClick={() => handleDelete(r.id)} style={S.btn('rgba(239,36,52,0.12)', S.red)}>✕</button>
           </div>
         ))}
@@ -238,12 +238,12 @@ function GameRow({ game, selected, onSelect, onToggle }: {
       </div>
       <div onClick={e => { e.stopPropagation(); onToggle() }} style={{
         width: 36, height: 20, borderRadius: 10,
-        background: game.is_active ? S.red : 'var(--line)',
+        background: game.active ? S.red : 'var(--line)',
         position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
         flexShrink: 0,
       }}>
         <div style={{
-          position: 'absolute', top: 2, left: game.is_active ? 18 : 2,
+          position: 'absolute', top: 2, left: game.active ? 18 : 2,
           width: 16, height: 16, borderRadius: 8, background: '#fff',
           transition: 'left 0.2s',
         }} />
@@ -263,7 +263,7 @@ export default function GamesAdmin() {
   const selected = games.find(g => g.id === selectedId) ?? null
 
   const handleToggle = async (game: Game) => {
-    await toggleGame(game.id, !game.is_active)
+    await toggleGame(game.id, !game.active)
     reload()
   }
 
@@ -308,7 +308,7 @@ export default function GamesAdmin() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
             <div>
               <div style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>{selected.name}</div>
-              <div style={{ fontSize: 12, color: S.muted }}>{selected.is_active ? '● Actif' : '○ Inactif'}</div>
+              <div style={{ fontSize: 12, color: S.muted }}>{selected.active ? '● Actif' : '○ Inactif'}</div>
             </div>
           </div>
 

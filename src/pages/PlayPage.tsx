@@ -635,7 +635,7 @@ export default function PlayPage() {
   // Derive maps for the active game
   const activeGame = games.find(g => g.id === match?.game_id)
   const maps = activeGame?.maps?.length
-    ? activeGame.maps.map(m => ({ id: m.id, name: m.name, color: m.image_url ?? '#333' }))
+    ? activeGame.maps.map(m => ({ id: m.id, name: m.name, color: '#444' }))
     : DEFAULT_MAPS
 
   const stage = match?.stage ?? 'lobby'
